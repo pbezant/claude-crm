@@ -1,0 +1,3 @@
+# Your real CRM data lives here when CRM_VAULT is unset — never commit client records.
+crm-vault/
+node_modules/
