@@ -1,13 +1,14 @@
 ---
 name: claude-crm
-description: A plain-text CRM you run by talking to Claude. Use when the user wants to track a client/lead/deal relationship — logging a touch ("log a call with Acme", "note that I emailed Northside"), moving someone through the pipeline ("move Acme to proposal", "mark that deal won"), scheduling or checking follow-ups ("who do I need to follow up with?", "what's due this week?", "remind me to call them Friday"), adding a new client/lead/prospect, or asking the status/history of a client. Records are markdown files in a folder (optionally an Obsidian vault); this skill is the interface, crm.mjs is the writer.
+description: A plain-text CRM you run by talking to Claude. Use when the user wants to track a client/lead/deal relationship — logging a touch ("log a call with Acme", "note that I emailed Northside"), moving someone through the pipeline ("move Acme to proposal", "mark that deal won"), scheduling or checking follow-ups ("who do I need to follow up with?", "what's due this week?", "remind me to call them Friday"), adding a new client/lead/prospect, asking the status/history of a client, or capturing a lesson from a lost/stalled deal ("we lost Acme because…", "log why that deal fell through", "what have we learned from lost deals?"). Records are markdown files in a folder (optionally an Obsidian vault); this skill is the interface, crm.mjs is the writer.
 ---
 
 # claude-crm
 
 A CRM whose records are plain markdown files — one file per client, with a YAML frontmatter
-block (stage, next action, due date, contact info) and a dated `## Timeline` of every touch.
-The user drives it by talking to you. Your job is to keep those records accurate and current.
+block (stage, next action, due date, contact info), a dated `## Timeline` of every touch, and a
+`## Lessons` log of what each lost/stalled deal taught. The user drives it by talking to you. Your
+job is to keep those records accurate and current — and to turn losses into lessons.
 
 ## The one rule: writes go through `crm.mjs`
 
@@ -73,6 +74,22 @@ Present the result conversationally and offer to reschedule or log the touch the
 
 **Pipeline overview** ("show me my pipeline") → `crm.mjs list`, then group by stage if helpful.
 
+**Log a lesson from a lost/stalled deal** ("we lost Acme — no case study for their trade";
+"log why that fell through") → `lesson`:
+```bash
+node crm.mjs lesson --slug acme \
+  --cause "the real reason it was lost — one level deeper than 'they said no'" \
+  --countermeasure "the durable fix — an asset to build, an objection answer, a qualifying question" \
+  --stage lost      # or dormant; omit if the deal isn't being closed out
+```
+- Draw out a *real* cause and a *concrete* countermeasure — don't accept "they weren't interested"
+  as a root cause; ask what would have changed it. This is the point of the feature.
+- Adding `--stage lost`/`--stage dormant` both records the lesson and closes the deal out.
+
+**What have we learned?** ("show me lessons from lost deals", "what's our loss playbook?") →
+`node crm.mjs lessons` — every lesson across all clients, grouped by client. Present the
+countermeasures as an action list where useful.
+
 ## Rules
 
 - **Never fabricate.** Only record what the user actually told you happened. Don't invent
@@ -86,5 +103,5 @@ Present the result conversationally and offer to reschedule or log the touch the
 
 ## Reference
 
-Full commands, cron follow-up sweep, and the importable `logTouch()` / `setFields()` functions
-(for auto-logging from the user's own scripts) are documented in `README.md`.
+Full commands, cron follow-up sweep, and the importable `logTouch()` / `setFields()` / `logLesson()`
+functions (for auto-logging from the user's own scripts) are documented in `README.md`.
