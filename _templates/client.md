@@ -15,3 +15,5 @@ created: YYYY-MM-DD
 ## Timeline
 
 ## Notes
+
+## Lessons

@@ -9,7 +9,8 @@
   "scripts": {
     "init": "node crm.mjs init",
     "due": "node crm.mjs due",
-    "list": "node crm.mjs list"
+    "list": "node crm.mjs list",
+    "lessons": "node crm.mjs lessons"
   },
   "engines": {
     "node": ">=18"

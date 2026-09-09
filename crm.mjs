@@ -25,9 +25,13 @@
      node crm.mjs log  --slug acme --event "call" [--note "..."]
                        [--stage contacted] [--next "send proposal"] [--due 2026-10-01] [--create]
      node crm.mjs set  --slug acme [--stage ...] [--next ...] [--due ...] [--email ...] [--phone ...]
+     node crm.mjs lesson --slug acme --cause "..." --countermeasure "..." [--stage lost] [--note "..."]
+                                                        # learn from a lost/stalled deal: record WHY
+                                                        # and the countermeasure, inline in ## Lessons
+     node crm.mjs lessons                               # the playbook: every lesson across all clients
      node crm.mjs due  [--within 0]                     # clients whose next_action_date <= today (+N days)
      node crm.mjs list                                  # every client: slug, stage, due
-   Also importable:  import { logTouch, setFields } from './crm.mjs'
+   Also importable:  import { logTouch, setFields, logLesson } from './crm.mjs'
 */
 import { readFile, writeFile, readdir, mkdir, access } from 'node:fs/promises';
 import { constants } from 'node:fs';
@@ -73,6 +77,8 @@ created: YYYY-MM-DD
 ## Timeline
 
 ## Notes
+
+## Lessons
 `;
 
 // --- tiny frontmatter parser/editor (simple \`key: value\` blocks only) ---
@@ -91,14 +97,25 @@ function renderDoc({ fm, fmOrder, body }) {
   return `---\n${lines.join('\n')}\n---\n${body}`;
 }
 
-// Insert a line at the bottom of the ## Timeline section (just before the next heading).
-function appendTimeline(body, line) {
-  const start = body.indexOf('## Timeline');
-  if (start === -1) return body.replace(/\s*$/, `\n\n## Timeline\n\n${line}\n`);
+// Insert a line at the bottom of a `## Heading` section (just before the next heading);
+// creates the section at the end of the doc if it doesn't exist yet.
+function appendSection(body, heading, line) {
+  const start = body.indexOf(heading);
+  if (start === -1) return body.replace(/\s*$/, `\n\n${heading}\n\n${line}\n`);
   const after = body.indexOf('\n## ', start + 1);
   const end = after === -1 ? body.length : after;
   const section = body.slice(start, end).replace(/\s*$/, '');
   return body.slice(0, start) + section + `\n${line}\n` + (after === -1 ? '' : '\n' + body.slice(end + 1));
+}
+const appendTimeline = (body, line) => appendSection(body, '## Timeline', line);
+
+// Read the `- ` bullet lines out of a `## Heading` section (used by the lessons playbook).
+function extractSection(body, heading) {
+  const start = body.indexOf(heading);
+  if (start === -1) return [];
+  const after = body.indexOf('\n## ', start + 1);
+  const end = after === -1 ? body.length : after;
+  return body.slice(start + heading.length, end).split('\n').map(s => s.trim()).filter(l => l.startsWith('- '));
 }
 
 /* Log a touch: append a dated timeline event and (optionally) update pipeline fields.
@@ -146,6 +163,30 @@ export async function setFields({ slug, stage, next, due, email, phone }) {
   return { ok: true, file };
 }
 
+/* Learn from a lost or stalled deal: record WHY it was lost and the countermeasure, inline in the
+   client's `## Lessons` section (the vault is the knowledge base — no separate file), plus a brief
+   `## Timeline` marker so the chronology stays complete. Optionally advances stage (e.g. to `lost`
+   or `dormant`). Fails safe like the rest of the engine; a lesson attaches to an existing record. */
+export async function logLesson({ slug, cause, countermeasure, note = '', stage, date = today() }) {
+  if (!await vaultReady()) return { skipped: true, reason: 'vault-not-found' };
+  if (!slug || !cause || !countermeasure) throw new Error('logLesson needs { slug, cause, countermeasure }');
+  const file = path.join(CLIENTS, `${slug}.md`);
+  let text;
+  try { text = await readFile(file, 'utf8'); }
+  catch { return { skipped: true, reason: 'no-record', file }; }
+  const doc = splitDoc(text);
+  if (stage !== undefined) {
+    if (!doc.fmOrder.includes('stage')) doc.fmOrder.push('stage');
+    doc.fm.stage = yesc(stage);
+  }
+  const tag = (stage || 'lesson').replace(/["']/g, '');
+  const noteStr = note ? ` (${note})` : '';
+  doc.body = appendSection(doc.body, '## Lessons', `- ${date} — **${tag}** — cause: ${cause} → countermeasure: ${countermeasure}${noteStr}`);
+  doc.body = appendTimeline(doc.body, `- ${date} — **lesson logged** — ${cause}`);
+  await writeFile(file, renderDoc(doc));
+  return { ok: true, file, stage: doc.fm.stage };
+}
+
 async function readClients() {
   const out = [];
   let names = [];
@@ -153,9 +194,28 @@ async function readClients() {
   for (const n of names) {
     if (!n.endsWith('.md')) continue;
     const doc = splitDoc(await readFile(path.join(CLIENTS, n), 'utf8'));
-    out.push({ slug: n.replace(/\.md$/, ''), fm: doc.fm });
+    out.push({ slug: n.replace(/\.md$/, ''), fm: doc.fm, body: doc.body });
   }
   return out;
+}
+
+// The compounding playbook: every lesson across all clients, so lost/stalled deals teach the next.
+async function cmdLessons() {
+  const clients = await readClients();
+  const strip = s => (s || '').replace(/^"|"$/g, '');
+  let count = 0;
+  for (const c of clients.sort((a, b) => a.slug.localeCompare(b.slug))) {
+    const lessons = extractSection(c.body, '## Lessons');
+    if (!lessons.length) continue;
+    console.log(`\n${strip(c.fm.name) || c.slug}  [${strip(c.fm.stage) || '—'}]`);
+    for (const l of lessons) { console.log(`  ${l}`); count++; }
+  }
+  if (!count) {
+    console.log('No lessons logged yet. Capture one when a deal is lost or stalls:');
+    console.log('  node crm.mjs lesson --slug <slug> --cause "…" --countermeasure "…" [--stage lost]');
+  } else {
+    console.log(`\n${count} lesson(s) across the pipeline.`);
+  }
 }
 
 // Scaffold a fresh vault: clients/ folder + a client template you can edit.
@@ -201,9 +261,10 @@ async function cmdList() {
 const invokedDirectly = import.meta.url === `file://${process.argv[1]}`;
 if (invokedDirectly) {
   const cmd = process.argv[2];
+  const readCmds = new Set(['due', 'list', 'lessons']);
   if (cmd === 'init') {
     await cmdInit();
-  } else if (!await vaultReady() && cmd !== 'due' && cmd !== 'list') {
+  } else if (!await vaultReady() && !readCmds.has(cmd)) {
     console.log(`(CRM vault not found at ${VAULT} — run: node crm.mjs init)`); process.exit(0);
   } else if (cmd === 'log') {
     const r = await logTouch({
@@ -218,12 +279,21 @@ if (invokedDirectly) {
       due: arg('due'), email: arg('email'), phone: arg('phone'),
     });
     console.log(r.ok ? `✓ updated ${arg('slug')}` : `(crm set skipped: ${r.reason})`);
+  } else if (cmd === 'lesson') {
+    const r = await logLesson({
+      slug: arg('slug'), cause: arg('cause'), countermeasure: arg('countermeasure', arg('cm')),
+      note: arg('note', ''), stage: arg('stage'),
+    });
+    if (r.ok) console.log(`✓ lesson logged → ${arg('slug')} (stage: ${(r.stage || '').replace(/^"|"$/g, '')})`);
+    else console.log(`(crm lesson skipped: ${r.reason})`);
+  } else if (cmd === 'lessons') {
+    await cmdLessons();
   } else if (cmd === 'due') {
     await cmdDue(parseInt(arg('within', '0'), 10) || 0, hasFlag('quiet'));
   } else if (cmd === 'list') {
     await cmdList();
   } else {
-    console.log('usage: node crm.mjs <init|log|set|due|list> [flags] (see header)');
+    console.log('usage: node crm.mjs <init|log|set|lesson|lessons|due|list> [flags] (see header)');
     process.exit(1);
   }
 }

@@ -1,9 +1,10 @@
 # claude-crm
 
 A plain-text CRM you can **run by talking to Claude** — stored as a plain folder of markdown
-files. **No database, no SaaS, no dependencies.** One client is one markdown file with a YAML
-frontmatter block and a dated `## Timeline`. A single ~200-line Node script (`crm.mjs`) is the
-only thing that ever writes to those files, so every way you interact with it stays in sync.
+files — **that also learns from your lost deals.** **No database, no SaaS, no dependencies.** One
+client is one markdown file with a YAML frontmatter block, a dated `## Timeline`, and a `## Lessons`
+log of what each loss taught you. A single Node script (`crm.mjs`) is the only thing that ever
+writes to those files, so every way you interact with it stays in sync.
 
 **Three interfaces, one folder of files** — use any or all:
 
@@ -112,12 +113,15 @@ node crm.mjs due                  # what needs action today
 | `init` | Scaffold the vault: `clients/` + a client template. |
 | `log --slug S --event "…"` | Append a dated timeline event. Flags below. |
 | `set --slug S …` | Update fields **without** a timeline event (reschedule, add contact info). |
+| `lesson --slug S …` | Record why a deal was lost/stalled + the countermeasure (see below). |
+| `lessons` | The playbook: every lesson across all clients. |
 | `due [--within N]` | Clients whose `next_action_date` is today (or within N days). |
 | `list` | Every client: slug, stage, due date. |
 
 **`log` flags:** `--event` (required), `--note`, `--stage`, `--next`, `--due YYYY-MM-DD`,
 `--create`, `--quiet` (for `due`: print nothing when nothing is due).
 **`set` flags:** `--stage`, `--next`, `--due`, `--email`, `--phone`.
+**`lesson` flags:** `--cause` (required), `--countermeasure`/`--cm` (required), `--stage`, `--note`.
 
 ---
 
@@ -134,6 +138,33 @@ export CRM_STAGES="lead,qualified,demo,negotiation,signed"
 
 Stages are **ranked**, which powers `advanceOnly`: an automated event can move a client forward
 but is prevented from ever dragging one backward.
+
+---
+
+## Learn from lost deals
+
+A pipeline tells you *who* to chase. It should also make you *better* at chasing. When a deal is
+lost or goes cold, capture **why** and the **countermeasure** — the durable change that makes the
+next pitch better (an asset to build, an objection answer, a qualifying question to add):
+
+```bash
+node crm.mjs lesson --slug acme-roofing \
+  --cause "no case study in their trade — couldn't answer 'have you done my industry?'" \
+  --countermeasure "build a roofing case study from the best existing demo" \
+  --stage lost
+```
+
+The lesson lands inline in that client's `## Lessons` section (the record stays the source of
+truth — no separate file), with a `## Timeline` marker so the history is complete. Then read the
+whole **playbook** — every lesson across every client — in one place:
+
+```bash
+node crm.mjs lessons
+```
+
+Because lessons live in the records themselves, they're greppable, backlinkable, and Dataview-able
+in Obsidian like everything else. Same discipline a good ops team runs on failures — every loss
+becomes a permanent countermeasure — applied to your pipeline.
 
 ---
 
@@ -179,10 +210,10 @@ Or pipe it into a notification, a Slack webhook, or your Obsidian daily note.
 | File | Role |
 |---|---|
 | `SKILL.md` | The Claude skill — how Claude drives the CRM from natural language. |
-| `crm.mjs` | The whole engine — CLI + importable `logTouch()` / `setFields()`. |
+| `crm.mjs` | The whole engine — CLI + importable `logTouch()` / `setFields()` / `logLesson()`. |
 | `_templates/client.md` | Reference copy of the record template `init` writes. |
 | `examples/northside-dental.md` | A populated record, so you can see the shape. |
-| `package.json` | Marks it as an ES module; `npm run init/due/list` shortcuts. |
+| `package.json` | Marks it as an ES module; `npm run init/due/list/lessons` shortcuts. |
 | `WRITEUP.md` | The story/design behind it (blog + LinkedIn drafts). |
 
 MIT licensed. Built by [Preston Bezant](https://prestonbezant.me).
