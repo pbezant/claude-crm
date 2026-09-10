@@ -1,0 +1,24 @@
+{
+  // Optional hosted CRM dashboard. Fill in the vars, set the GITHUB_TOKEN secret, add a route
+  // (or use the workers.dev subdomain), then: npx wrangler deploy --config crm-worker/wrangler.jsonc
+  // Put Cloudflare Access in front of the hostname so only you can open it.
+  "name": "claude-crm",
+  "main": "worker.js",
+  "compatibility_date": "2025-01-01",
+
+  // A custom domain (must be a zone in your Cloudflare account). Or delete "routes" and deploy to
+  // the free <name>.<subdomain>.workers.dev URL instead.
+  "routes": [
+    // { "pattern": "crm.example.com", "custom_domain": true }
+  ],
+
+  "vars": {
+    "GH_OWNER": "YOUR_GITHUB_OWNER",
+    "GH_REPO": "YOUR_RECORDS_REPO",
+    "GH_BRANCH": "main",
+    "CRM_DIR": "crm-vault/clients",
+    "REQUIRE_ACCESS": "true"
+  }
+  // Secret (set once, not in this file):
+  //   npx wrangler secret put GITHUB_TOKEN --config crm-worker/wrangler.jsonc
+}

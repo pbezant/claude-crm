@@ -10,7 +10,8 @@
     "init": "node crm.mjs init",
     "due": "node crm.mjs due",
     "list": "node crm.mjs list",
-    "lessons": "node crm.mjs lessons"
+    "lessons": "node crm.mjs lessons",
+    "dashboard": "node build-dashboard.mjs"
   },
   "engines": {
     "node": ">=18"

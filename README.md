@@ -205,6 +205,42 @@ Or pipe it into a notification, a Slack webhook, or your Obsidian daily note.
 
 ---
 
+## Web dashboard (optional)
+
+The records are just markdown, so you can render them as a dashboard — Todos (next action due) and a
+Pipeline of big cards grouped by stage, with a per-client drawer (contact, notes, full timeline).
+
+**Local, read-only** — one self-contained HTML file, no server, works offline:
+
+```bash
+npm run dashboard          # reads CRM_VAULT/clients -> out/dashboard.html
+open out/dashboard.html
+```
+
+**Hosted, editable** — an optional Cloudflare Worker (`crm-worker/`). It reads and writes your records
+through the GitHub API, so **every edit in the browser is a real commit**; your local tools see changes
+after a `git pull`. Because it reads from GitHub, your records must be committed to a repo the Worker
+can reach — **use a private repo** (client data), separate from this public one, and point `CRM_DIR`
+at it.
+
+```bash
+# 1. Fill in crm-worker/wrangler.jsonc: GH_OWNER, GH_REPO, GH_BRANCH, CRM_DIR, and a route (or use workers.dev).
+# 2. A fine-grained GitHub PAT with Contents: Read+Write on your records repo, stored as a Worker secret:
+npx wrangler secret put GITHUB_TOKEN --config crm-worker/wrangler.jsonc
+# 3. Deploy:
+npx wrangler deploy --config crm-worker/wrangler.jsonc
+```
+
+**Protect it.** The Worker refuses any request without a Cloudflare Access assertion (fails closed), so
+put a [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/) policy on the
+hostname allowing just your email. The `GITHUB_TOKEN` stays a Worker secret — never in the repo or the
+browser.
+
+Both the static build and the Worker render the **same** UI (`dashboard-template.mjs`) from the **same**
+record model (`crm-model.mjs`), so they never drift.
+
+---
+
 ## Files in this repo
 
 | File | Role |
@@ -213,7 +249,12 @@ Or pipe it into a notification, a Slack webhook, or your Obsidian daily note.
 | `crm.mjs` | The whole engine — CLI + importable `logTouch()` / `setFields()` / `logLesson()`. |
 | `_templates/client.md` | Reference copy of the record template `init` writes. |
 | `examples/northside-dental.md` | A populated record, so you can see the shape. |
-| `package.json` | Marks it as an ES module; `npm run init/due/list/lessons` shortcuts. |
+| `package.json` | Marks it as an ES module; `npm run init/due/list/lessons/dashboard` shortcuts. |
+| `md-record.mjs` | Pure (fs-free) markdown-record helpers, shared by the dashboard + Worker. |
+| `crm-model.mjs` | Record ⇄ client-object model: `recordToClient` + `applyPatch`. |
+| `dashboard-template.mjs` | The dashboard UI (one template for both static and hosted). |
+| `build-dashboard.mjs` | Builds the local, read-only `out/dashboard.html`. |
+| `crm-worker/` | Optional Cloudflare Worker: the hosted, editable, git-backed dashboard. |
 | `WRITEUP.md` | The story/design behind it (blog + LinkedIn drafts). |
 
 MIT licensed. Built by [Preston Bezant](https://prestonbezant.me).
