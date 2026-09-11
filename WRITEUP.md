@@ -85,6 +85,13 @@ is one you'll rip back out. This one can't.
 
 The whole stack: Node's standard library, plus a skill file. Zero dependencies. Runs anywhere.
 
+**And because the records are just markdown, I can put a face on them.** There's an optional web
+dashboard — Todos and a pipeline of glanceable cards, with a drawer for each client's contact, notes,
+and full timeline. Two flavors from one template: a static HTML file you open locally (read-only,
+offline), or a hosted version behind a login where every edit is a *git commit* back to the records.
+So it's still a folder of text files and one small writer — I just added a window I can also edit
+through, on my phone, without giving up the plain-text source of truth.
+
 And none of it is specific to my business. I build websites for local businesses, so my pipeline
 stages happen to be about demos and deploys — but the stages are one environment variable, and
 the pattern (plain text + one small writer + a conversational interface + auto-logging + a safe
