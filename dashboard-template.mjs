@@ -9,8 +9,10 @@
    grouped by stage) + a per-client drawer with contact, editable fields, freeform notes, and timeline. */
 
 // Default stages + labels. Records may use any stage string; unknown values fall back to the raw value.
-const STAGES = ['lead', 'contacted', 'proposal', 'won', 'lost', 'dormant'];
-const STAGE_LABEL = { lead: 'Lead', contacted: 'Contacted', proposal: 'Proposal', won: 'Won', lost: 'Lost', dormant: 'Dormant' };
+// Default order matches crm.mjs (override there with CRM_STAGES). Unknown stages still render as their
+// own group at the end, so a custom CRM_STAGES pipeline works without touching this file.
+const STAGES = ['lead', 'contacted', 'meeting', 'proposal', 'won', 'lost', 'dormant'];
+const STAGE_LABEL = { lead: 'Lead', contacted: 'Contacted', meeting: 'Meeting', proposal: 'Proposal', won: 'Won', lost: 'Lost', dormant: 'Dormant' };
 
 export function dashboardHTML({ clientsJson = null, editable = false, title = 'CRM · Dashboard' } = {}) {
   const bootstrap = clientsJson
@@ -53,7 +55,7 @@ export function dashboardHTML({ clientsJson = null, editable = false, title = 'C
   .group-h span { font-size:12px; opacity:.7; }
   .badge { display:inline-block; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
   .b-won,.b-proposal { color:var(--ok); border-color:var(--ok); }
-  .b-contacted { color:var(--brand); border-color:var(--brand); }
+  .b-contacted,.b-meeting { color:var(--brand); border-color:var(--brand); }
   .b-lost { color:var(--bad); border-color:var(--bad); }
   .due { font-size:12.5px; margin-top:8px; }
   .due.overdue { color:var(--bad); } .due.today { color:var(--warn); } .due.soon { color:var(--muted); }
