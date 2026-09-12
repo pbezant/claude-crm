@@ -14,6 +14,7 @@ import path from 'node:path';
 
 import { recordToClient } from './crm-model.mjs';
 import { dashboardHTML } from './dashboard-template.mjs';
+import { today } from './md-record.mjs';
 
 const VAULT = process.env.CRM_VAULT || path.join(process.cwd(), 'crm-vault');
 const CLIENTS = path.join(VAULT, 'clients');
@@ -36,7 +37,7 @@ const clients = await loadClients();
 if (clients) {
   await mkdir(path.dirname(OUT), { recursive: true });
   await writeFile(OUT, dashboardHTML({ clientsJson: JSON.stringify(clients), editable: false }));
-  const today = new Date().toISOString().slice(0, 10);
-  const due = clients.filter((c) => c.nextActionDate && c.nextActionDate <= today).length;
+  const localToday = today();
+  const due = clients.filter((c) => c.nextActionDate && c.nextActionDate <= localToday).length;
   console.log(`Wrote ${OUT} — ${clients.length} clients, ${due} due. Open it in a browser.`);
 }

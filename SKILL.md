@@ -1,6 +1,6 @@
 ---
 name: claude-crm
-description: A plain-text CRM you run by talking to Claude. Use when the user wants to track a client/lead/deal relationship — logging a touch ("log a call with Acme", "note that I emailed Northside"), moving someone through the pipeline ("move Acme to proposal", "mark that deal won"), scheduling or checking follow-ups ("who do I need to follow up with?", "what's due this week?", "remind me to call them Friday"), adding a new client/lead/prospect, asking the status/history of a client, or capturing a lesson from a lost/stalled deal ("we lost Acme because…", "log why that deal fell through", "what have we learned from lost deals?"). Records are markdown files in a folder (optionally an Obsidian vault); this skill is the interface, crm.mjs is the writer.
+description: A plain-text CRM you run by talking to Codex or Claude. Use when the user wants to track a client/lead/deal relationship — logging a touch ("log a call with Acme", "note that I emailed Northside"), moving someone through the pipeline ("move Acme to proposal", "mark that deal won"), scheduling or checking follow-ups ("who do I need to follow up with?", "what's due this week?", "remind me to call them Friday"), adding a new client/lead/prospect, asking the status/history of a client, or capturing a lesson from a lost/stalled deal ("we lost Acme because…", "log why that deal fell through", "what have we learned from lost deals?"). Records are markdown files in a folder (optionally an Obsidian vault); this skill is the conversational interface and crm.mjs is the writer.
 ---
 
 # claude-crm
@@ -27,7 +27,9 @@ session, confirm it exists: `node crm.mjs list`. If it errors or is empty and th
 adding their first client, run `node crm.mjs init` to scaffold it. If `CRM_VAULT` isn't set and
 the user has a preferred location (e.g. inside an Obsidian vault), have them export it.
 
-Run all commands from the folder that contains `crm.mjs` (or use its full path).
+Run commands from the repository root (the folder containing `crm.mjs`). When `CRM_VAULT` is
+unset, using an absolute script path from another working directory would select the wrong default
+vault because `./crm-vault` is resolved from the working directory.
 
 ## The pipeline
 

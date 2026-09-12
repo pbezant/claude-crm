@@ -107,12 +107,14 @@ const STAGES = ${JSON.stringify(STAGES)};
 const STAGE_LABEL = ${JSON.stringify(STAGE_LABEL)};
 const TABS = ['Todos', 'Pipeline'];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const todayStr = new Date().toISOString().slice(0,10);
+const now = new Date();
+const todayStr = [now.getFullYear(), String(now.getMonth()+1).padStart(2,'0'), String(now.getDate()).padStart(2,'0')].join('-');
 let tab = 'Pipeline', openSlug = null;
 
 function toast(msg, err){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(err?' err':''); setTimeout(()=>t.className='toast',2200); }
 async function refresh(){ try { const r=await fetch('/api/clients',{headers:{accept:'application/json'}}); if(!r.ok) throw new Error(r.status); CLIENTS=await r.json(); } catch(e){ toast('Could not load clients: '+e.message,true); } }
 async function save(slug, patch){
+  if(patch.event && !patch.date) patch.date=todayStr;
   const r = await fetch('/api/clients/'+encodeURIComponent(slug), { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(patch) });
   if(!r.ok){ toast('Save failed ('+r.status+')',true); return false; }
   const updated = await r.json();

@@ -8,7 +8,18 @@
    `md-vault.mjs` re-exports all of these and adds the fs-based vault gates (vaultReady/pathExists) that
    only make sense on a real filesystem. Import from here when you need the parsers without fs. */
 
-export const today = () => new Date().toISOString().slice(0, 10);
+const pad2 = (n) => String(n).padStart(2, '0');
+
+// Calendar dates in CRM records should follow the user's/machine's local day, not UTC. Using
+// toISOString() here made evening activity in the Americas appear as tomorrow's activity.
+export const localDate = (date = new Date()) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+export const today = () => localDate();
+export function dateAfterDays(days = 0, date = new Date()) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return localDate(result);
+}
 export const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 // quote a YAML scalar only when it contains characters that would break a `key: value` line.

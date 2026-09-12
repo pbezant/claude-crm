@@ -1,6 +1,6 @@
 # claude-crm
 
-A plain-text CRM you can **run by talking to Claude** — stored as a plain folder of markdown
+A plain-text CRM you can **run by talking to Codex or Claude** — stored as a plain folder of markdown
 files — **that also learns from your lost deals.** **No database, no SaaS, no dependencies.** One
 client is one markdown file with a YAML frontmatter block, a dated `## Timeline`, and a `## Lessons`
 log of what each loss taught you. A single Node script (`crm.mjs`) is the only thing that ever
@@ -10,7 +10,7 @@ writes to those files, so every way you interact with it stays in sync.
 
 | Interface | For | How |
 |---|---|---|
-| 🗣️ **Claude** (primary) | Everyday logging, hands-free | "Log a call with Acme, move them to proposal, follow up Friday." The `claude-crm` skill (`SKILL.md`) drives `crm.mjs` for you. |
+| 🗣️ **Codex or Claude** (primary) | Everyday logging, hands-free | "Log a call with Acme, move them to proposal, follow up Friday." The `claude-crm` skill drives `crm.mjs` for you. |
 | ⌨️ **CLI + cron** | Automation, scripts, a daily due sweep | `node crm.mjs log/due/list …` and `logTouch()` imported into your own scripts. |
 | 📝 **Obsidian / any editor** (optional) | Reading, backlinks, Dataview tables | Point `CRM_VAULT` at a folder inside your vault. Purely optional — the CRM needs no GUI. |
 
@@ -73,28 +73,33 @@ Four load-bearing ideas:
 
 ---
 
-## Install the Claude skill (primary interface)
+## Use the Codex or Claude skill (primary interface)
 
 Requires **Node 18+**. No `npm install` — `crm.mjs` uses only Node built-ins.
 
 ```bash
 git clone https://github.com/pbezant/claude-crm.git
-# Make it a Claude Code skill (user-level; or copy into a project's .claude/skills/):
-ln -s "$(pwd)/claude-crm" ~/.claude/skills/claude-crm
+cd claude-crm
+
+# Codex: open this folder as a project. The checked-in .agents/skills entry is discovered
+# automatically from anywhere inside the repository.
+
+# Claude Code (optional): expose the same repository as a user-level skill:
+ln -s "$(pwd)" ~/.claude/skills/claude-crm
 
 # Tell it where records should live (a plain folder, optionally inside an Obsidian vault):
 export CRM_VAULT="$HOME/Documents/Obsidian/MyVault/CRM"   # add to ~/.zshrc / ~/.bashrc
 ```
 
-Then just talk to Claude:
+Then just talk to Codex or Claude:
 
 > "Add Acme Roofing as a new lead." · "Log that I called Northside — they want a quote next
 > week." · "Move Acme to proposal and follow up Friday." · "Who do I need to follow up with?"
 
-Claude reads/answers from the files and routes every change through `crm.mjs`. See `SKILL.md`
+The assistant reads/answers from the files and routes every change through `crm.mjs`. See `SKILL.md`
 for exactly how it behaves.
 
-*(No Claude Code? The CLI below is a complete, standalone way to use it.)*
+*(No AI assistant? The CLI below is a complete, standalone way to use it.)*
 
 ---
 
@@ -245,7 +250,8 @@ record model (`crm-model.mjs`), so they never drift.
 
 | File | Role |
 |---|---|
-| `SKILL.md` | The Claude skill — how Claude drives the CRM from natural language. |
+| `.agents/skills/claude-crm/SKILL.md` | Repository-scoped entry point that Codex discovers automatically. |
+| `SKILL.md` | The complete conversational workflow used by Codex and Claude. |
 | `crm.mjs` | The whole engine — CLI + importable `logTouch()` / `setFields()` / `logLesson()`. |
 | `_templates/client.md` | Reference copy of the record template `init` writes. |
 | `examples/northside-dental.md` | A populated record, so you can see the shape. |
