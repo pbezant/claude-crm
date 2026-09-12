@@ -82,7 +82,10 @@ export default {
         const patch = await request.json();
         const file = await getFile(env, p);
         if (!file) return new Response(JSON.stringify({ error: 'no such client' }), { status: 404, headers: JSON_HEADERS });
-        const next = applyPatch(file.text, patch);
+        // The browser supplies its local calendar date for timeline events. Workers run in UTC,
+        // which otherwise dates evening activity in the Americas one day too far ahead.
+        const eventDate = /^\d{4}-\d{2}-\d{2}$/.test(patch.date || '') ? patch.date : undefined;
+        const next = applyPatch(file.text, patch, eventDate);
         if (next !== file.text) await putFile(env, p, next, file.sha, `crm(${slug}): ${patch.event || 'update'} (via dashboard)`);
         return new Response(JSON.stringify(recordToClient(next, slug)), { headers: JSON_HEADERS });
       } catch (e) { return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 502, headers: JSON_HEADERS }); }

@@ -1,7 +1,7 @@
 {
   "name": "claude-crm",
   "version": "1.0.0",
-  "description": "A plain-text, git-versioned CRM you run by talking to Claude. No database, no SaaS, no dependencies — one client per markdown file, driven by a ~200-line Node CLI, with a Claude skill and optional Obsidian GUI on top.",
+  "description": "A plain-text, git-versioned CRM you run by talking to Codex or Claude. No database, no SaaS, no dependencies — one client per markdown file, driven by a small Node CLI, with an agent skill and optional Obsidian GUI on top.",
   "type": "module",
   "bin": {
     "crm": "crm.mjs"
@@ -11,7 +11,8 @@
     "due": "node crm.mjs due",
     "list": "node crm.mjs list",
     "lessons": "node crm.mjs lessons",
-    "dashboard": "node build-dashboard.mjs"
+    "dashboard": "node build-dashboard.mjs",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"

@@ -36,6 +36,7 @@
 import { readFile, writeFile, readdir, mkdir, access } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import path from 'node:path';
+import { dateAfterDays, today } from './md-record.mjs';
 
 export const VAULT = process.env.CRM_VAULT || path.join(process.cwd(), 'crm-vault');
 const CLIENTS = path.join(VAULT, 'clients');
@@ -49,7 +50,6 @@ const STAGES = (process.env.CRM_STAGES || 'lead,contacted,meeting,proposal,won')
 const TERMINAL = new Set(['won', 'lost', 'dormant']);
 
 const rank = (s) => { const i = STAGES.indexOf((s || '').replace(/["']/g, '')); return i === -1 ? -1 : i; };
-const today = () => new Date().toISOString().slice(0, 10);
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > -1 ? process.argv[i + 1] : d; };
 const hasFlag = (n) => process.argv.includes(`--${n}`);
 // Quote a frontmatter value only when it contains YAML-significant characters.
@@ -235,7 +235,7 @@ async function cmdInit() {
 
 async function cmdDue(withinDays = 0, quiet = false) {
   const clients = await readClients();
-  const cutoff = new Date(Date.now() + withinDays * 864e5).toISOString().slice(0, 10);
+  const cutoff = dateAfterDays(withinDays);
   const strip = s => (s || '').replace(/["']/g, '');
   const due = clients
     .filter(c => c.fm.next_action_date && !TERMINAL.has(strip(c.fm.stage)) && strip(c.fm.next_action_date) <= cutoff)
